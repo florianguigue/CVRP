@@ -2,8 +2,37 @@ package model;
 
 public class Client {
     private int tournee;
-
     private int position;
+    private int latitude;
+    private int longitude;
+    private int quantite;
+
+    public Client() {
+    }
+
+    public int getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(int latitude) {
+        this.latitude = latitude;
+    }
+
+    public int getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(int longitude) {
+        this.longitude = longitude;
+    }
+
+    public int getQuantite() {
+        return quantite;
+    }
+
+    public void setQuantite(int quantite) {
+        this.quantite = quantite;
+    }
 
     public int getTournee() {
         return tournee;
