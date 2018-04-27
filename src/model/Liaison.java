@@ -1,26 +1,26 @@
 package model;
 
 public class Liaison {
-    private int source;
-    private int destination;
+    private Client source;
+    private Client destination;
     private int distance;
 
     public Liaison() {
     }
 
-    public int getSource() {
+    public Client getSource() {
         return source;
     }
 
-    public void setSource(int source) {
+    public void setSource(Client source) {
         this.source = source;
     }
 
-    public int getDestination() {
+    public Client getDestination() {
         return destination;
     }
 
-    public void setDestination(int destination) {
+    public void setDestination(Client destination) {
         this.destination = destination;
     }
 
