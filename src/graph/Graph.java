@@ -6,6 +6,7 @@ import model.Liaison;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 public class Graph {
     private List<Client> clients;
@@ -17,7 +18,16 @@ public class Graph {
 
     public void init() {
         clients = new ArrayList<Client>();
-        initClients("C:\\Users\\Epulapp\\Documents\\Cours\\Semestre 8\\Optimisation discrete\\resources\\data01.txt");
+        Properties prop = new Properties();
+        try {
+            InputStream input = new FileInputStream("./src/config.properties");
+            prop.load(input);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        initClients(prop.getProperty("data_01"));
     }
 
     public List<Client> getClients() {
