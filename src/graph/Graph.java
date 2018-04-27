@@ -7,8 +7,11 @@ import java.io.*;
 import java.util.*;
 
 public class Graph {
+    private final Integer POIDS_MAX_CAMION = 100;
+
     private List<Client> clients;
     private List<Liaison> distances;
+    private Integer nbCamions;
 
     public Graph() {
         init();
@@ -63,7 +66,7 @@ public class Graph {
             bufRead.readLine();
             while ((myLine = bufRead.readLine()) != null) {
                 String[] array1 = myLine.split(";");
-                Client client = new Client(Integer.parseInt(array1[1]), Integer.parseInt(array1[2]), Integer.parseInt(array1[3]));
+                Client client = new Client(Integer.parseInt(array1[0]), Integer.parseInt(array1[1]), Integer.parseInt(array1[2]), Integer.parseInt(array1[3]));
                 clients.add(client);
             }
         } catch (IOException e) {
@@ -194,7 +197,6 @@ public class Graph {
 
     /**
      * Calculate the distance between two customers
-     *
      * @param source
      * @param destination
      * @return Integer
@@ -249,5 +251,17 @@ public class Graph {
             }
         }
         return fitnessList;
+    }
+    public Integer getNbCamions() {
+        return nbCamions;
+    }
+
+    public void setNbCamions() {
+        Integer poidsTotal = 0;
+        for (Client client: clients) {
+            poidsTotal += client.getQuantite();
+        }
+        Double nbCamionsDouble = Math.ceil(poidsTotal / POIDS_MAX_CAMION);
+        nbCamions = nbCamionsDouble.intValue();
     }
 }
