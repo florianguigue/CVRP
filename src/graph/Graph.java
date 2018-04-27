@@ -136,8 +136,27 @@ public class Graph {
         client2.setTournee(temp.getTournee());
     }
 
-    private int getDistance(Client source, Client destination) {
-        return 1;
+    /**
+     * Calculate the fitness of the actual solution
+     * @return Integer
+     */
+    public Integer getFitness() {
+        Integer fitness = 0;
+        for (Liaison liaison : distances) {
+            fitness += liaison.getDistance();
+        }
+        return fitness;
+    }
+
+    /**
+     * Calculate the distance between two customers
+     * @param source
+     * @param destination
+     * @return Integer
+     */
+    private Integer getDistance(Client source, Client destination) {
+        Double distance = Math.sqrt(Math.pow((source.getLatitude() - destination.getLatitude()), 2) + Math.pow((source.getLongitude() - destination.getLongitude()), 2));
+        return distance.intValue();
     }
 
 }
