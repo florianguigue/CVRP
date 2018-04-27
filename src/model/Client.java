@@ -10,6 +10,12 @@ public class Client {
     public Client() {
     }
 
+    public Client(int latitude, int longitude, int quantite) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.quantite = quantite;
+    }
+
     public int getLatitude() {
         return latitude;
     }
