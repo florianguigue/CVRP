@@ -3,7 +3,7 @@ package model;
 public class Liaison {
     private Client source;
     private Client destination;
-    private int distance;
+    private Integer distance;
 
     public Liaison() {
     }

@@ -12,6 +12,8 @@ public class Main {
     }
 
     public static void run(){
-        graph.runOpti();
+        System.out.println(graph.getFitness());
+        graph = graph.runOpti();
+        System.out.println(graph.getFitness());
     }
 }

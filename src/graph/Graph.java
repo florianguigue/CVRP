@@ -22,6 +22,7 @@ public class Graph {
      */
     public void init() {
         clients = new ArrayList<Client>();
+        distances = new ArrayList<>();
         Properties prop = new Properties();
         try {
             InputStream input = new FileInputStream("./src/config.properties");
@@ -32,6 +33,7 @@ public class Graph {
             e.printStackTrace();
         }
         initClients(prop.getProperty("data_01"));
+        initSchema();
     }
 
     public List<Client> getClients() {
@@ -81,15 +83,25 @@ public class Graph {
     private void initSchema() {
         int indexCompteur = 0, i = 0;
         for (Client client : clients) {
-            if (indexCompteur <= clients.size() / 3) {
-                client.setTournee(i);
-                client.setPosition(indexCompteur);
+            Liaison liaison = new Liaison();
+            liaison.setSource(client);
+            client.setPosition(indexCompteur);
+            client.setTournee(i);
+            if (indexCompteur < clients.size() / 3 && getClientById(client.getId() + 1) != null && client.getId() != clients.size() - 1) {
                 indexCompteur++;
-            }
-            if (indexCompteur == clients.size() / 3) {
+                if (indexCompteur == 1) {
+                    liaison.setSource(getClientById(0));
+                    liaison.setDestination(getClientById(client.getId() + 1));
+                } else {
+                    liaison.setDestination(getClientById(client.getId() + 1));
+                }
+            } else {
+                liaison.setDestination(getClientById(0));
                 indexCompteur = 0;
                 i++;
             }
+            liaison.setDistance(getDistance(liaison.getSource(), liaison.getDestination()));
+            distances.add(liaison);
         }
     }
 
@@ -101,7 +113,7 @@ public class Graph {
      */
     public void swapClients(Client client1, Client client2) {
         //on vérifie que les clients sont différents
-        if (client1 != client2) {
+        if (client1 != client2 && client1.getId() != 0 && client2.getId() != 0) {
 
             //On récupère les données necessaires pour recréer la matrice des distances
             int positionC1 = client1.getPosition();
@@ -114,33 +126,47 @@ public class Graph {
 
             //parmis les clients à livrer lequel est celui avant le client1 et le client 2
             for (Client c : clients) {
-                if (c.getPosition() == positionC1 - 1) {
+                if (c.getPosition() == positionC1 - 1 && c.getTournee() == client1.getTournee()) {
                     clientPrecedent1 = c;
                 }
-                if (c.getPosition() == positionC1 + 1) {
+                if (c.getPosition() == positionC1 + 1 && c.getTournee() == client1.getTournee()) {
                     clientSuivant1 = c;
                 }
-                if (c.getPosition() == positionC2 - 1) {
+                if (c.getPosition() == positionC2 - 1 && c.getTournee() == client2.getTournee()) {
                     clientPrecedent2 = c;
                 }
-
-                if (c.getPosition() == positionC2 + 1) {
+                if ((c.getPosition() == positionC2 + 1) && c.getTournee() == client2.getTournee()) {
                     clientSuivant2 = c;
                 }
             }
+
+            //si le client1 est le dernier de sa tournée
+            if (clientSuivant1 == null) {
+                clientSuivant1 = getClientById(0);
+            }
+            //si le client2 est le dernier de sa tournée
+            if (clientSuivant2 == null) {
+                clientSuivant2 = getClientById(0);
+            }
+            if(clientPrecedent1 == null){
+                clientPrecedent1 = getClientById(0);
+            }
+            if(clientPrecedent2 == null){
+                clientPrecedent2 = getClientById(0);
+            }
+
             //On modifie la matrice des distances
             for (Liaison distance : distances) {
                 boolean hasChanged = false;
 
-                //On modifie la matrice des distances du client1 précédent et du client1
-
+                //On modifie la matrice des distances du client précédent et du client
                 if (distance.getSource() == clientPrecedent1) {
                     distance.setDestination(client2);
                     hasChanged = true;
                 }
 
-                if (distance.getSource() == clientPrecedent1) {
-                    distance.setDestination(client2);
+                if (distance.getSource() == client1) {
+                    distance.setDestination(clientSuivant2);
                     hasChanged = true;
                 }
 
@@ -156,29 +182,38 @@ public class Graph {
                 }
 
                 //recalcul des distances de la ligne modifiée
-                if (hasChanged == true) {
-                    distance.setDistance(getDistance(distance.getSource(), distance.getDestination()));
+                if (hasChanged) {
+                    try {
+                        distance.setDistance(getDistance(distance.getSource(), distance.getDestination()));
+                    } catch (NullPointerException e) {
+                        e.printStackTrace();
+                    }
                     hasChanged = false;
                 }
             }
 
             //on inverse les points dans la matrice principale
-            Client temp = client1;
+            Integer tempPosition = client1.getPosition();
+            Integer tempTournee = client1.getTournee();
             client1.setPosition(client2.getPosition());
             client1.setTournee(client2.getTournee());
-            client2.setPosition(temp.getPosition());
-            client2.setTournee(temp.getTournee());
+            client2.setPosition(tempPosition);
+            client2.setTournee(tempTournee);
         }
     }
 
     /**
      * Get random client from the client list "clients"
+     * It can not return the clientID 0 (warehouse)
      *
      * @return
      */
     public Client getRandomClient() {
-        Random randomGenerator = new Random();
-        int index = randomGenerator.nextInt(clients.size());
+        int index = 0;
+        do {
+            Random randomGenerator = new Random();
+            index = randomGenerator.nextInt(clients.size());
+        } while (clients.get(index).getId() == 0);
         return clients.get(index);
     }
 
@@ -197,13 +232,15 @@ public class Graph {
 
     /**
      * Calculate the distance between two customers
+     *
      * @param source
      * @param destination
      * @return Integer
      */
-    private Integer getDistance(Client source, Client destination) {
+    private Integer getDistance(Client source, Client destination) throws NullPointerException {
         Double distance = Math.sqrt(Math.pow((source.getLatitude() - destination.getLatitude()), 2) + Math.pow((source.getLongitude() - destination.getLongitude()), 2));
         return distance.intValue();
+
     }
 
     /**
@@ -211,22 +248,25 @@ public class Graph {
      */
     public Graph runOpti() {
         Graph bestGraph = this;
-        int currentFitness = Integer.MAX_VALUE;
+        int currentFitness = getFitness();
         int tabooFake = 0;
-        while (tabooFake < 4) {
+        while (tabooFake < 20) {
             Client clientToSwap = getRandomClient();
             Map<Client, Integer> neighbors = getNeighbors(clientToSwap);
             Collection<Integer> listFitnessValues = neighbors.values();
-            int maxFitness = 0;
+            int maxFitness = Integer.MAX_VALUE;
             Client bestNeighbor = null;
             for (Map.Entry<Client, Integer> fitness : neighbors.entrySet()) {
-                if (fitness.getValue() > maxFitness)
+                if (fitness.getValue() < maxFitness) {
                     bestNeighbor = fitness.getKey();
                     maxFitness = fitness.getValue();
+                }
             }
-            if (maxFitness >= currentFitness) {
-                swapClients(clientToSwap,bestNeighbor);
+            if (maxFitness <= currentFitness) {
+                currentFitness = maxFitness;
+                swapClients(clientToSwap, bestNeighbor);
                 bestGraph = this;
+                tabooFake = 0;
             } else {
                 tabooFake++;
             }
@@ -242,8 +282,9 @@ public class Graph {
     private Map<Client, Integer> getNeighbors(Client clientToSwap) {
         Map<Client, Integer> fitnessList = new HashMap<>();
         for (Client client : clients) {
-            if (client != clientToSwap) {
-                //on swap 2 client, on calcul la fitness puis on remet les clients en place (simulation)
+            if (client != clientToSwap && client.getId() != 0) {
+                //on swap 2 clients, on calcule la fitness puis on remet les clients en place (simulation)
+                Graph currentGraph = this;
                 swapClients(clientToSwap, client);
                 int fitness = getFitness();
                 fitnessList.put(client, fitness);
@@ -252,16 +293,25 @@ public class Graph {
         }
         return fitnessList;
     }
+
     public Integer getNbCamions() {
         return nbCamions;
     }
 
     public void setNbCamions() {
         Integer poidsTotal = 0;
-        for (Client client: clients) {
+        for (Client client : clients) {
             poidsTotal += client.getQuantite();
         }
         Double nbCamionsDouble = Math.ceil(poidsTotal / POIDS_MAX_CAMION);
         nbCamions = nbCamionsDouble.intValue();
+    }
+
+    private Client getClientById(Integer id) {
+        for (Client client : getClients()) {
+            if (Objects.equals(client.getId(), id))
+                return client;
+        }
+        return null;
     }
 }
