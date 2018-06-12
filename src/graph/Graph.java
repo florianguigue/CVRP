@@ -13,6 +13,8 @@ public class Graph {
     private List<Liaison> distances;
     private Integer nbCamions;
     private Graph bestGraph;
+    ArrayList<Integer> tabooKey = new ArrayList<>();
+    ArrayList<Integer> tabooValues = new ArrayList<>();
 
     public Graph() {
         init();
@@ -25,6 +27,8 @@ public class Graph {
         bestGraph = this;
         clients = new ArrayList<Client>();
         distances = new ArrayList<>();
+        tabooKey = new ArrayList<>();
+        tabooValues = new ArrayList<>();
         Properties prop = new Properties();
         try {
             InputStream input = new FileInputStream("./src/config.properties");
@@ -301,16 +305,16 @@ public class Graph {
     public Graph runOpti() {
         Graph bestGraph = this;
         int currentFitness = getFitness();
-        int tabooFake = 0;
-        while (tabooFake < 5) {
+        int maxFitness = 0;
+        while (maxFitness < Integer.MAX_VALUE) {
             Client bestNeighbor = null;
             Client bestClient = null;
-            int maxFitness = Integer.MAX_VALUE;
+            maxFitness = Integer.MAX_VALUE;
             for (Client client : clients) {
                 if (client.getId() != 0) {
                     Map<Client, Integer> neighbors = getNeighbors(client);
                     for (Map.Entry<Client, Integer> fitness : neighbors.entrySet()) {
-                        if (fitness.getValue() < maxFitness) {
+                        if (fitness.getValue() < maxFitness && !inTaboo(client.getTournee(), fitness.getKey().getTournee())) {
                             bestClient = client;
                             bestNeighbor = fitness.getKey();
                             maxFitness = fitness.getValue();
@@ -318,13 +322,38 @@ public class Graph {
                     }
                 }
             }
-            tabooFake = (maxFitness <= currentFitness) ? 0 : tabooFake + 1;
-            swapClients(bestClient, bestNeighbor);
-            currentFitness = maxFitness;
-            bestGraph = this;
+            if (maxFitness != Integer.MAX_VALUE) {
+                if (maxFitness > currentFitness) {
+                    currentFitness = maxFitness;
+                    if (tabooKey.size() < 9) {
+                        tabooKey.add(bestClient.getTournee());
+                        tabooValues.add(bestNeighbor.getTournee());
+                    } else {
+                        tabooKey.remove(0);
+                        tabooValues.remove(0);
+                        tabooKey.add(bestClient.getTournee());
+                        tabooValues.add(bestNeighbor.getTournee());
+                    }
+                }
+                swapClients(bestClient, bestNeighbor);
+                if (maxFitness != Integer.MAX_VALUE && maxFitness < currentFitness) {
+                    bestGraph = this;
+                }
+                currentFitness = maxFitness;
+            }
             System.out.println(maxFitness);
         }
         return bestGraph;
+    }
+
+    private boolean inTaboo(Integer tourneeKey, Integer tourneeValue) {
+        boolean inTaboo = false;
+        for (int i = 0; i < tabooKey.size(); i++) {
+            if (tabooKey.get(i) == tourneeKey && tabooValues.get(i) == tourneeValue) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
