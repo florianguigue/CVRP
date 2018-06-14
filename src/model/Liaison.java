@@ -8,6 +8,12 @@ public class Liaison {
     public Liaison() {
     }
 
+    public Liaison(Liaison liaison) {
+        source = liaison.getSource();
+        destination = liaison.getDestination();
+        distance = liaison.getDistance();
+    }
+
     public Client getSource() {
         return source;
     }

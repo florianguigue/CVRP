@@ -11,6 +11,15 @@ public class Client {
     public Client() {
     }
 
+    public Client(Client client) {
+        id = client.getId();
+        tournee = client.getTournee();
+        position = client.getPosition();
+        latitude = client.getLatitude();
+        longitude = client.getLongitude();
+        quantite = client.getQuantite();
+    }
+
     public Client(Integer id, Integer latitude, Integer longitude, Integer quantite) {
         this.id = id;
         this.latitude = latitude;

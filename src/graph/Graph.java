@@ -8,6 +8,7 @@ import java.util.*;
 
 public class Graph {
     private final Integer POIDS_MAX_CAMION = 100;
+    private final Integer TABOO_SIZE = (int) Math.pow(6, 2);
 
     private List<Client> clients;
     private List<Liaison> distances;
@@ -20,11 +21,22 @@ public class Graph {
         init();
     }
 
+    public Graph(Graph clone) {
+        this.clients = new ArrayList<>();
+        for (Client client : clone.clients) {
+            this.clients.add(new Client(client));
+        }
+        this.distances = new ArrayList<>();
+        for (Liaison liaison : clone.distances) {
+            this.distances.add(new Liaison(liaison));
+        }
+        this.nbCamions = clone.getNbCamions();
+    }
+
     /**
      * init the graph
      */
     public void init() {
-        bestGraph = this;
         clients = new ArrayList<Client>();
         distances = new ArrayList<>();
         tabooKey = new ArrayList<>();
@@ -93,18 +105,32 @@ public class Graph {
             liaison.setSource(client);
             client.setPosition(indexCompteur);
             client.setTournee(i);
-            if (indexCompteur < clients.size() / 3 && getClientById(client.getId() + 1) != null && client.getId() != clients.size() - 1) {
-                indexCompteur++;
-                if (indexCompteur == 1 && i == 0) {
-                    liaison.setSource(getClientById(0));
-                } else if (indexCompteur == 1) {
+            if (getClientById(client.getId() + 1) != null && client.getId() != clients.size() - 1) {
+                if(client.getQuantite() + getChargeCamion(client.getTournee()) <= POIDS_MAX_CAMION - 1) {
+                    indexCompteur++;
+                    if (indexCompteur == 1 && i == 0) {
+                        liaison.setSource(getClientById(0));
+                    } else if (indexCompteur == 1) {
+                        Liaison liaisonDepot = new Liaison();
+                        liaisonDepot.setSource(getClientById(0));
+                        liaisonDepot.setDestination(getClientById(client.getId()));
+                        liaisonDepot.setDistance(getDistance(liaisonDepot.getSource(), liaisonDepot.getDestination()));
+                        distances.add(liaisonDepot);
+                    }
+                    liaison.setDestination(getClientById(client.getId() + 1));
+                } else {
                     Liaison liaisonDepot = new Liaison();
                     liaisonDepot.setSource(getClientById(0));
                     liaisonDepot.setDestination(getClientById(client.getId()));
                     liaisonDepot.setDistance(getDistance(liaisonDepot.getSource(), liaisonDepot.getDestination()));
                     distances.add(liaisonDepot);
+                    liaison.setDestination(getClientById(0));
+                    indexCompteur = 1;
+                    i++;
+                    client.setTournee(i);
+                    client.setPosition(indexCompteur);
+                    liaison.setDestination(getClientById(client.getId() + 1));
                 }
-                liaison.setDestination(getClientById(client.getId() + 1));
             } else {
                 liaison.setDestination(getClientById(0));
                 indexCompteur = 0;
@@ -126,7 +152,8 @@ public class Graph {
         int client1TourneeClient0 = 0;
         int client2TourneeClient0 = 0;
         //on vérifie que les clients sont différents
-        if (client1 != client2 && client1.getId() != 0 && client2.getId() != 0) {
+        if (client1 != client2 && client1.getId() != 0 && client2.getId() != 0 &&
+                canSwapClient(client1, client2)) {
 
             //On récupère les données necessaires pour recréer la matrice des distances
             int positionC1 = client1.getPosition();
@@ -303,7 +330,7 @@ public class Graph {
      * Used to run the optimisation process
      */
     public Graph runOpti() {
-        Graph bestGraph = this;
+        bestGraph = new Graph(this);
         int currentFitness = getFitness();
         int maxFitness = 0;
         while (maxFitness < Integer.MAX_VALUE) {
@@ -314,7 +341,7 @@ public class Graph {
                 if (client.getId() != 0) {
                     Map<Client, Integer> neighbors = getNeighbors(client);
                     for (Map.Entry<Client, Integer> fitness : neighbors.entrySet()) {
-                        if (fitness.getValue() < maxFitness && !inTaboo(client.getTournee(), fitness.getKey().getTournee())) {
+                        if (fitness.getValue() < maxFitness && !inTaboo(client.getPosition(), fitness.getKey().getPosition())) {
                             bestClient = client;
                             bestNeighbor = fitness.getKey();
                             maxFitness = fitness.getValue();
@@ -323,21 +350,21 @@ public class Graph {
                 }
             }
             if (maxFitness != Integer.MAX_VALUE) {
-                if (maxFitness > currentFitness) {
+                if (maxFitness >= currentFitness) {
                     currentFitness = maxFitness;
-                    if (tabooKey.size() < 9) {
-                        tabooKey.add(bestClient.getTournee());
-                        tabooValues.add(bestNeighbor.getTournee());
+                    if (tabooKey.size() < TABOO_SIZE) {
+                        tabooKey.add(bestClient.getPosition());
+                        tabooValues.add(bestNeighbor.getPosition());
                     } else {
                         tabooKey.remove(0);
                         tabooValues.remove(0);
-                        tabooKey.add(bestClient.getTournee());
-                        tabooValues.add(bestNeighbor.getTournee());
+                        tabooKey.add(bestClient.getPosition());
+                        tabooValues.add(bestNeighbor.getPosition());
                     }
                 }
                 swapClients(bestClient, bestNeighbor);
-                if (maxFitness != Integer.MAX_VALUE && maxFitness < currentFitness) {
-                    bestGraph = this;
+                if (maxFitness != Integer.MAX_VALUE && maxFitness < bestGraph.getFitness()) {
+                    bestGraph = new Graph(this);
                 }
                 currentFitness = maxFitness;
             }
@@ -346,6 +373,13 @@ public class Graph {
         return bestGraph;
     }
 
+    /**
+     * return true if the element yet exist
+     *
+     * @param tourneeKey
+     * @param tourneeValue
+     * @return
+     */
     private boolean inTaboo(Integer tourneeKey, Integer tourneeValue) {
         boolean inTaboo = false;
         for (int i = 0; i < tabooKey.size(); i++) {
@@ -392,6 +426,30 @@ public class Graph {
 
     public Integer getNbCamions() {
         return nbCamions;
+    }
+
+
+    /**
+     * Return the truck weight
+     *
+     * @param tournee
+     * @return
+     */
+    public Integer getChargeCamion(Integer tournee) {
+        Integer chargeTot = 0;
+        for (Client client : clients) {
+            if (client.getTournee() == tournee)
+                chargeTot += client.getQuantite();
+        }
+        return chargeTot;
+    }
+
+    public boolean canSwapClient(Client C1, Client C2){
+        if(getChargeCamion(C2.getTournee()) + C1.getQuantite() -  C2.getQuantite() < POIDS_MAX_CAMION
+                && getChargeCamion(C1.getTournee()) + C2.getQuantite() -  C1.getQuantite() < POIDS_MAX_CAMION){
+            return true;
+        }
+        return false;
     }
 
     public void setNbCamions() {
