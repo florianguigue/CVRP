@@ -6,9 +6,7 @@ public class Main {
 
     public static void main(String[] args) {
         graph = new Graph();
-        graph.getClients();
         run();
-        System.out.println();
     }
 
     public static void run(){
