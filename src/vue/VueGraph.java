@@ -17,6 +17,8 @@ import model.Liaison;
 public class VueGraph extends Application {
 
     private static Graph graph;
+    private static Integer COEF=6;
+    private static Integer ECART = 50;
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -40,15 +42,15 @@ public class VueGraph extends Application {
         Graph graph = new Graph();
         Group root =  new Group();
         for (Client client : graph.getClients()) {
-            Circle circle = new Circle((client.getLongitude() * 5) + 50, (client.getLatitude() * 5 + 50), 2);
+            Circle circle = new Circle((client.getLongitude() * COEF) + ECART, (client.getLatitude() * COEF + ECART), 2);
             if (client.getId() == 0) {
-                
+
             }
             root.getChildren().add(circle);
         }
 
         for (Liaison liaison : graph.getDistances()) {
-            Line line = new Line((liaison.getSource().getLongitude() * 5) + 50, (liaison.getSource().getLatitude() * 5) + 50, (liaison.getDestination().getLongitude() * 5) + 50, (liaison.getDestination().getLatitude() * 5) + 50);
+            Line line = new Line((liaison.getSource().getLongitude() * COEF) + ECART, (liaison.getSource().getLatitude() * COEF) + ECART, (liaison.getDestination().getLongitude() * COEF) + ECART, (liaison.getDestination().getLatitude() * COEF) + ECART);
             root.getChildren().add(line);
         }
         return  root;

@@ -8,7 +8,7 @@ import java.util.*;
 
 public class Graph {
     private final Integer POIDS_MAX_CAMION = 100;
-    private final Integer TABOO_SIZE = (int) Math.pow(6, 2);
+    private final Integer TABOO_SIZE = (int) Math.pow(10, 2);
 
     private List<Client> clients;
     private List<Liaison> distances;
@@ -50,7 +50,7 @@ public class Graph {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        initClients(prop.getProperty("data_01"));
+        initClients(prop.getProperty("data_02"));
         initSchema();
     }
 
@@ -213,6 +213,7 @@ public class Graph {
                         }
                     } else if (clientPrecedent1 == client2) {
                         distance.setDestination(clientSuivant1);
+                        hasChanged = true;
                     } else {
                         distance.setDestination(client2);
                         hasChanged = true;
@@ -227,6 +228,7 @@ public class Graph {
                         }
                     } else if (clientSuivant2 == client1) {
                         distance.setDestination(client2);
+                        hasChanged = true;
                     } else {
                         distance.setDestination(clientSuivant2);
                         hasChanged = true;
@@ -244,6 +246,7 @@ public class Graph {
                         }
                     } else if (clientPrecedent2 == client1) {
                         distance.setDestination(clientSuivant2);
+                        hasChanged = true;
                     } else {
                         distance.setDestination(client1);
                         hasChanged = true;
@@ -258,6 +261,7 @@ public class Graph {
                         }
                     } else if (clientSuivant1 == client2) {
                         distance.setDestination(client1);
+                        hasChanged = true;
                     } else {
                         distance.setDestination(clientSuivant1);
                         hasChanged = true;
@@ -362,8 +366,9 @@ public class Graph {
                         tabooValues.add(bestNeighbor.getPosition());
                     }
                 }
+                this.getFitness();
                 swapClients(bestClient, bestNeighbor);
-                if (maxFitness != Integer.MAX_VALUE && maxFitness < bestGraph.getFitness()) {
+                if (maxFitness != Integer.MAX_VALUE && maxFitness <= bestGraph.getFitness()) {
                     bestGraph = new Graph(this);
                 }
                 currentFitness = maxFitness;
@@ -401,27 +406,33 @@ public class Graph {
             int fitness = getFitness();
             if (client != clientToSwap && client.getId() != 0) {
                 //on swap 2 clients, on calcule la fitness puis on remet les clients en place (simulation)
-                //debugList(distances);
+                 String test1 = debugList(distances,client,clientToSwap);
                 swapClients(clientToSwap, client);
                 fitness = getFitness();
-                //debugList(distances);
+                debugList(distances,client,clientToSwap);
                 fitnessList.put(client, fitness);
                 swapClients(clientToSwap, client);
                 fitness = getFitness();
-                if (true) {
-                    //debugList(distances);
+                String test2 = debugList(distances,client,clientToSwap);
+                if(test1 != test2){
+                    System.out.println("error sur client :  " + client.getId() + " et " + clientToSwap.getId());
                 }
             }
         }
         return fitnessList;
     }
 
-    private void debugList(List<Liaison> list) {
+    private String debugList(List<Liaison> list, Client c1, Client c2) {
+        String temp = "";
         for (Liaison liaison : list) {
-            System.out.print(liaison.getDistance() + "\n");
+            if (liaison.getSource() == c1 || liaison.getSource() == c2) {
+                temp+=liaison.getDistance();
+                System.out.print(liaison.getDistance() + "\n");
+            }
         }
 
         System.out.println();
+        return temp;
     }
 
     public Integer getNbCamions() {
