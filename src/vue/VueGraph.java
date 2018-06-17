@@ -8,6 +8,7 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.ScatterChart;
 import javafx.scene.chart.XYChart;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.stage.Stage;
@@ -17,7 +18,7 @@ import model.Liaison;
 public class VueGraph extends Application {
 
     private static Graph graph;
-    private static Integer COEF=6;
+    private static Integer COEF = 6;
     private static Integer ECART = 50;
 
     @Override
@@ -25,11 +26,10 @@ public class VueGraph extends Application {
 
         graph = new Graph();
         Group group;
-
         System.out.println(graph.getFitness());
         graph = graph.runOpti();
         System.out.println(graph.getFitness());
-        group = draw();
+        group = draw(graph);
 
         Scene scene = new Scene(group, 1000, 1000);
 
@@ -38,22 +38,27 @@ public class VueGraph extends Application {
         primaryStage.show();
     }
 
-    public Group draw(){
-        Graph graph = new Graph();
-        Group root =  new Group();
+    public Group draw(Graph graph) {
+        Group root = new Group();
         for (Client client : graph.getClients()) {
             Circle circle = new Circle((client.getLongitude() * COEF) + ECART, (client.getLatitude() * COEF + ECART), 2);
             if (client.getId() == 0) {
-
+                circle.setFill(Color.BLUE);
             }
             root.getChildren().add(circle);
         }
+        Color color = Color.color(Math.random(), Math.random(), Math.random());
 
         for (Liaison liaison : graph.getDistances()) {
+            if (liaison.getDestination().getId() == null) {
+                System.out.println("aie");
+            }
             Line line = new Line((liaison.getSource().getLongitude() * COEF) + ECART, (liaison.getSource().getLatitude() * COEF) + ECART, (liaison.getDestination().getLongitude() * COEF) + ECART, (liaison.getDestination().getLatitude() * COEF) + ECART);
+            line.setFill(color);
             root.getChildren().add(line);
+
         }
-        return  root;
+        return root;
     }
 
     public static void main(String args[]) {
