@@ -1,9 +1,7 @@
 package model;
 
-public class Client {
+public class Client implements Cloneable{
     private Integer id;
-    private Integer tournee;
-    private Integer position;
     private Integer latitude;
     private Integer longitude;
     private Integer quantite;
@@ -42,27 +40,15 @@ public class Client {
         this.quantite = quantite;
     }
 
-    public Integer getTournee() {
-        return tournee;
-    }
-
-    public void setTournee(Integer tournee) {
-        this.tournee = tournee;
-    }
-
-    public Integer getPosition() {
-        return position;
-    }
-
-    public void setPosition(Integer position) {
-        this.position = position;
-    }
-
     public Integer getId() {
         return id;
     }
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public Double getDistance(Client c){
+        return Math.sqrt(Math.pow(longitude - c.getLongitude(), 2) + Math.pow(latitude - c.getLatitude(), 2));
     }
 }
