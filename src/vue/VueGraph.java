@@ -16,13 +16,8 @@ import javafx.stage.Stage;
 import model.Circuit;
 import model.Client;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 public class VueGraph extends Application {
 
@@ -37,79 +32,53 @@ public class VueGraph extends Application {
         Graph graph = new Graph();
         nodes = new ArrayList<>();
         Group root = new Group();
-        Properties prop = new Properties();
-
-        try {
-            InputStream input = new FileInputStream("./src/config.properties");
-            prop.load(input);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
         Button data1 = new Button("data01");
         data1.setOnAction(actionEvent -> {
-            actualData = "data_01";
-            initData(graph, root, prop.getProperty(actualData));
-            graph.initCircuit();
-            root.getChildren().removeAll(nodes);
-            nodes.clear();
-            createAllCircuit(graph.getAllCircuits(), graph.getWarehouse());
-            root.getChildren().addAll(nodes);
+            initCircuits(root, graph, "./resources/data01.txt");
         });
         data1.setLayoutX(140);
         root.getChildren().add(data1);
         Button data2 = new Button("data02");
         data2.setOnAction(actionEvent -> {
-            actualData = "data_02";
-            initData(graph, root, prop.getProperty(actualData));
-            graph.initCircuit();
-            root.getChildren().removeAll(nodes);
-            nodes.clear();
-            createAllCircuit(graph.getAllCircuits(), graph.getWarehouse());
-            root.getChildren().addAll(nodes);
+            initCircuits(root, graph, "./resources/data02.txt");
         });
         data2.setLayoutX(210);
         root.getChildren().add(data2);
         Button data3 = new Button("data03");
         data3.setOnAction(actionEvent -> {
-            actualData = "data_03";
-            initData(graph, root, prop.getProperty(actualData));
-            graph.initCircuit();
-            root.getChildren().removeAll(nodes);
-            nodes.clear();
-            createAllCircuit(graph.getAllCircuits(), graph.getWarehouse());
-            root.getChildren().addAll(nodes);
+            initCircuits(root, graph, "./resources/data03.txt");
         });
         data3.setLayoutX(280);
         root.getChildren().add(data3);
+
         Button data4 = new Button("data04");
         data4.setOnAction(actionEvent -> {
-            actualData = "data_04";
-            initData(graph, root, prop.getProperty(actualData));
-            graph.initCircuit();
-            root.getChildren().removeAll(nodes);
-            nodes.clear();
-            createAllCircuit(graph.getAllCircuits(), graph.getWarehouse());
-            root.getChildren().addAll(nodes);
+            initCircuits(root, graph, "./resources/data04.txt");
         });
         data4.setLayoutX(350);
         root.getChildren().add(data4);
+
+        Button data5 = new Button("data05");
+        data5.setOnAction(actionEvent -> {
+            initCircuits(root, graph, "./resources/data05.txt");
+        });
+        data5.setLayoutX(420);
+        root.getChildren().add(data5);
         //Creating a Scene
 
         Integer tabouListSize = 3;
         Integer tabouIteration = 100;
 
         Button runTabou = new Button("Run tabou");
-        runTabou.setLayoutX(450);
+        runTabou.setLayoutX(490);
         runTabou.setOnAction(actionEvent -> {
             graph.setNbMaxIteration(tabouIteration);
-            graph.setTabouListSize(tabouListSize);
+            graph.setTailleListTabou(tabouListSize);
             graph.tabou();
             root.getChildren().removeAll(nodes);
             nodes.clear();
-            createAllCircuit(graph.getOptimizedCircuit(), graph.getWarehouse());
+            createAllCircuit(graph.getCircuitOptimise(), graph.getEntrepot());
             root.getChildren().addAll(nodes);
         });
         root.getChildren().addAll(runTabou);
@@ -120,21 +89,21 @@ public class VueGraph extends Application {
             Double meilleurFitness = 10000.0;
             List<Circuit> meilleurCircuit = new ArrayList<>();
             for (int i = 0; i < 100; i++) {
-                initData(graph, root, prop.getProperty(actualData));
+                initData(graph, root, actualData);
                 graph.initCircuit();
                 root.getChildren().removeAll(nodes);
                 nodes.clear();
-                createAllCircuit(graph.getAllCircuits(), graph.getWarehouse());
+                createAllCircuit(graph.getAllCircuits(), graph.getEntrepot());
                 root.getChildren().addAll(nodes);
 
                 graph.setNbMaxIteration(tabouIteration);
-                graph.setTabouListSize(tabouListSize);
+                graph.setTailleListTabou(tabouListSize);
 
                 Double fitness = graph.tabou();
                 root.getChildren().removeAll(nodes);
                 nodes.clear();
-                List<Circuit> circuits = graph.getOptimizedCircuit();
-                createAllCircuit(circuits, graph.getWarehouse());
+                List<Circuit> circuits = graph.getCircuitOptimise();
+                createAllCircuit(circuits, graph.getEntrepot());
                 root.getChildren().addAll(nodes);
 
                 if (meilleurFitness > fitness) {
@@ -142,10 +111,10 @@ public class VueGraph extends Application {
                     meilleurCircuit = circuits;
                 }
             }
-            System.out.println("Meilleur fitness : " + meilleurFitness);
+            System.out.println("Meilleure fitness : " + meilleurFitness);
             root.getChildren().removeAll(nodes);
             nodes.clear();
-            createAllCircuit(meilleurCircuit, graph.getWarehouse());
+            createAllCircuit(meilleurCircuit, graph.getEntrepot());
             root.getChildren().addAll(nodes);
         });
         root.getChildren().addAll(runMultipleTabou);
@@ -168,29 +137,36 @@ public class VueGraph extends Application {
 
     }
 
+    private void initCircuits(Group root, Graph graph, String data) {
+        actualData = data;
+        initData(graph, root, data);
+        graph.initCircuit();
+        root.getChildren().removeAll(nodes);
+        nodes.clear();
+        createAllCircuit(graph.getAllCircuits(), graph.getEntrepot());
+        root.getChildren().addAll(nodes);
+    }
+
     public static void main(String args[]){
         launch(args);
     }
 
     private static void initData(Graph controller, Group root, String fileName){
         controller.initValue(fileName);
-        List<Client> customers = controller.getAllCustomers();
+        List<Client> listClients = controller.getListClients();
         root.getChildren().removeAll(nodes);
         nodes.clear();
-        for(Client c : customers){
-            createCustomer(c, c.getId().toString(), Color.BLUE);
+        for(Client c : listClients){
+            nouveauClient(c, c.getId().toString(), Color.BLUE);
         }
-        createCustomer(controller.getWarehouse(), "Entrepôt", Color.RED);
+        nouveauClient(controller.getEntrepot(), "Entrepôt", Color.RED);
 
         root.getChildren().addAll(nodes);
     }
 
-    private static void createCustomer(Client customer, String title, Color color){
+    private static void nouveauClient(Client customer, String title, Color color){
         Circle customerCicle;
-        Text text;
-        customerCicle = new Circle(customer.getLongitude()*coeff + constante,
-                customer.getLatitude()*coeff + constante,
-                5);
+        customerCicle = new Circle(customer.getLongitude()*coeff + constante, customer.getLatitude()*coeff + constante, 5);
         customerCicle.setFill(color);
         customerCicle.setStroke(color);
         customerCicle.setStrokeWidth(2);
@@ -199,25 +175,25 @@ public class VueGraph extends Application {
         nodes.add(customerCicle);
     }
 
-    private static void createAllCircuit(List<Circuit> circuits, Client entrepot){
+    private static void createAllCircuit(List<Circuit> listCircuits, Client entrepot){
         Color color;
-        Client customer;
+        Client client;
 
-        for(Circuit c : circuits){
+        for(Circuit c : listCircuits){
             color = Color.color(Math.random(), Math.random(), Math.random());
-            for(int i = 0; i < c.getCustomers().size() -1; ++i){
-                customer = c.getCustomers().get(i);
-                if(!(customer.getId() == 0))
-                    createCustomer(customer, customer.getId().toString(), color);
+            for(int i = 0; i < c.getClients().size() -1; ++i){
+                client = c.getClients().get(i);
+                if(!(client.getId() == 0))
+                    nouveauClient(client, client.getId().toString(), color);
 
-                createLine(customer, c.getCustomers().get(i+1), color);
+                createLine(client, c.getClients().get(i+1), color);
             }
-            customer = c.getCustomers().getLast();
-            createCustomer(customer, customer.getId().toString(), color);
-            createLine(customer, entrepot, color);
+            client = c.getClients().getLast();
+            nouveauClient(client, client.getId().toString(), color);
+            createLine(client, entrepot, color);
 
         }
-        createCustomer(entrepot, "Entrepôt", Color.RED);
+        nouveauClient(entrepot, "Entrepôt", Color.RED);
     }
 
     private static void createLine(Client source, Client dest, Color color){

@@ -8,14 +8,14 @@ import java.util.*;
 
 public class Graph {
     private List<Circuit> allCircuits;
-    private List<Circuit> optimizedCircuit;
-    private List<Client> allCustomers;
+    private List<Circuit> circuitOptimise;
+    private List<Client> listClients;
     private Client entrepot;
-    private Integer nbTrucks;
-    private Integer allQuantities;
+    private Integer nbCamions;
+    private Integer listQuantites;
     private LinkedList<List<Circuit>> tabouList;
-    private Map<List<Circuit>, Double> allNeighbor;
-    private Integer tabouListSize;
+    private Map<List<Circuit>, Double> listVoisins;
+    private Integer tailleListTabou;
     private Integer nbMaxIteration;
 
     public Graph(){}
@@ -24,89 +24,84 @@ public class Graph {
         try {
             initValue("./resources/data01.txt");
             initCircuit();
-            searchOptimizedNeighbor();
-
-
+            rechercheMeilleurVoisins();
         }catch (Exception e){
             e.printStackTrace();
         }
     }
 
-    private List<Circuit> getOptimizedNeighbor(List<Circuit> circuits, Double fitness) throws Exception{
-        List<Circuit> cloneCircuit;
-        List<Circuit> optimizedNeighbor = null;
-        Double optimizedFitness = null;
+    private List<Circuit> getMeilleurVoisin(List<Circuit> circuits, Double fitness) throws Exception{
+        List<Circuit> graphClone;
+        List<Circuit> voisinOptimise = null;
+        Double fitnessOptimise = null;
         Circuit circuit;
-        Double calculatedFitness;
-        Integer customerIndex;
+        Double fitnessGraphCLone;
+        Integer iClient;
         for(int i = 0; i < circuits.size(); ++i){
             circuit = circuits.get(i);
-            for(Client customer : circuit.getCustomers()){
-                if(customer.getId() == 0){
-                    continue;
-                }
-                cloneCircuit = cloneList(circuits);
-                customerIndex = cloneCircuit.get(i).getCustomers().indexOf(customer);
-                cloneCircuit.get(i).removeCustomer(customer);
-                for(Circuit clonedCircuit : cloneCircuit){
-                    for(int j = 1; j < clonedCircuit.getCustomers().size(); ++j){
-                        if(clonedCircuit.getQuantity() + customer.getQuantite() <= 100) {
-                            clonedCircuit.addCustomerAt(customer, j);
-                            calculatedFitness = getTotalFitness(cloneCircuit);
-                            if (optimizedFitness == null || optimizedFitness > calculatedFitness) {
-                                optimizedFitness = calculatedFitness;
-                                optimizedNeighbor = cloneCircuit;
+            for(Client client : circuit.getClients()){
+                if(client.getId() != 0){
+                    graphClone = cloneListCircuits(circuits);
+                    iClient = graphClone.get(i).getClients().indexOf(client);
+                    graphClone.get(i).supprimerClient(client);
+                    for(Circuit clonedCircuit : graphClone){
+                        for(int j = 1; j < clonedCircuit.getClients().size(); ++j){
+                            if(clonedCircuit.getQuantite() + client.getQuantite() <= 100) {
+                                clonedCircuit.ajouterClientAtIndex(client, j);
+                                fitnessGraphCLone = getTotalFitness(graphClone);
+                                if (fitnessOptimise == null || fitnessOptimise > fitnessGraphCLone) {
+                                    fitnessOptimise = fitnessGraphCLone;
+                                    voisinOptimise = graphClone;
+                                }
+                                clonedCircuit.supprimerClient(client);
                             }
-                            clonedCircuit.removeCustomer(customer);
                         }
                     }
+                    graphClone.get(i).ajouterClientAtIndex(client, iClient);
                 }
-                cloneCircuit.get(i).addCustomerAt(customer, customerIndex);
             }
         }
-        if(fitness.equals(optimizedFitness)) throw new Exception("Valeur optimisée");
-        return optimizedNeighbor;
+        return voisinOptimise;
     }
 
-    private List<Circuit> tabouMethod(List<Circuit> circuits, Double fitness) throws Exception{
-        allNeighbor = new HashMap<>();
-        List<Circuit> cloneCircuit;
+    private List<Circuit> runTabou(List<Circuit> circuits, Double fitness) throws Exception{
+        listVoisins = new HashMap<>();
+        List<Circuit> graphClone;
         Circuit circuit;
-        Double calculatedFitness;
-        Integer customerIndex;
+        Double fitnessGraphClone;
+        Integer iClient;
         for(int i = 0; i < circuits.size(); ++i){
             circuit = circuits.get(i);
-            for(Client customer : circuit.getCustomers()){
-                if(customer.getId() == 0){
-                    continue;
-                }
-                cloneCircuit = cloneList(circuits);
-                customerIndex = cloneCircuit.get(i).getCustomers().indexOf(customer);
-                cloneCircuit.get(i).removeCustomer(customer);
-                for(Circuit clonedCircuit : cloneCircuit){
-                    for(int j = 1; j < clonedCircuit.getCustomers().size(); ++j){
-                        if(clonedCircuit.getQuantity() + customer.getQuantite() <= 100) {
-                            clonedCircuit.addCustomerAt(customer, j);
-                            List<Circuit> keyCircuit = cloneList(cloneCircuit);
-                            calculatedFitness = getTotalFitness(keyCircuit);
-                            allNeighbor.put(keyCircuit, calculatedFitness);
-                            clonedCircuit.removeCustomer(customer);
+            for(Client client : circuit.getClients()){
+                if(client.getId() != 0){
+                    graphClone = cloneListCircuits(circuits);
+                    iClient = graphClone.get(i).getClients().indexOf(client);
+                    graphClone.get(i).supprimerClient(client);
+                    for(Circuit clonedCircuit : graphClone){
+                        for(int j = 1; j < clonedCircuit.getClients().size(); ++j){
+                            if(clonedCircuit.getQuantite() + client.getQuantite() <= 100) {
+                                clonedCircuit.ajouterClientAtIndex(client, j);
+                                List<Circuit> keyCircuit = cloneListCircuits(graphClone);
+                                fitnessGraphClone = getTotalFitness(keyCircuit);
+                                listVoisins.put(keyCircuit, fitnessGraphClone);
+                                clonedCircuit.supprimerClient(client);
+                            }
                         }
                     }
+                    graphClone.get(i).ajouterClientAtIndex(client, iClient);
                 }
-                cloneCircuit.get(i).addCustomerAt(customer, customerIndex);
             }
         }
         Map.Entry<List<Circuit>, Double> min;
-        min = Collections.min(allNeighbor.entrySet(), Comparator.comparing(Map.Entry::getValue));
+        min = Collections.min(listVoisins.entrySet(), Comparator.comparing(Map.Entry::getValue));
         while (tabouList.contains(min.getKey())){
-            allNeighbor.remove(min.getKey());
-            if(allNeighbor.size() == 0) return null;
-            min = Collections.min(allNeighbor.entrySet(), Comparator.comparing(Map.Entry::getValue));
+            listVoisins.remove(min.getKey());
+            if(listVoisins.size() == 0) return null;
+            min = Collections.min(listVoisins.entrySet(), Comparator.comparing(Map.Entry::getValue));
         }
 
         if(min.getValue() > fitness) {
-            if (tabouList.size() == tabouListSize)
+            if (tabouList.size() == tailleListTabou)
                 tabouList.removeLast();
             if (!tabouList.contains(min.getKey()))
                 tabouList.addFirst(min.getKey());
@@ -114,10 +109,12 @@ public class Graph {
         return min.getKey();
     }
 
-    private List<Circuit> cloneList(List<Circuit> list) {
+    private List<Circuit> cloneListCircuits(List<Circuit> list) {
         try{
             List<Circuit> clone = new ArrayList<>(list.size());
-            for (Circuit item : list) clone.add(item.clone());
+            for (Circuit item : list) {
+                clone.add(item.clone());
+            }
             return clone;
         }catch (Exception e){
             e.printStackTrace();
@@ -126,7 +123,7 @@ public class Graph {
     }
 
     private static Double getTotalFitness(List<Circuit> circuits){
-        Double fitnessTotal = 0d;
+        Double fitnessTotal = 0.0;
         for(Circuit c : circuits) {
             c.setFitness(c.computeFitness());
             fitnessTotal += c.computeFitness();
@@ -136,13 +133,13 @@ public class Graph {
 
     public void initValue(String fileName){
         try{
-            allCustomers = new ArrayList<>();
+            listClients = new ArrayList<>();
             File f = new File(fileName);
             InputStreamReader isr = new InputStreamReader(new FileInputStream(f));
             BufferedReader reader = new BufferedReader(isr);
             String s = reader.readLine();
             String[] values;
-            allQuantities = 0;
+            listQuantites = 0;
             while (s != null) {
                 if (!s.trim().equals("") && !s.startsWith("i")) {
                     values = s.split(";");
@@ -152,15 +149,15 @@ public class Graph {
                                 Integer.valueOf(values[2]),
                                 0);
                     else
-                        allCustomers.add(new Client(Integer.valueOf(values[0]),
+                        listClients.add(new Client(Integer.valueOf(values[0]),
                                 Integer.valueOf(values[1]),
                                 Integer.valueOf(values[2]),
                                 Integer.valueOf(values[3])));
-                    allQuantities += Integer.valueOf(values[3]);
+                    listQuantites += Integer.valueOf(values[3]);
                 }
                 s = reader.readLine();
             }
-            nbTrucks = (allQuantities/100+1);
+            nbCamions = (listQuantites /100+1);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -169,20 +166,20 @@ public class Graph {
     public void initCircuit(){
         allCircuits = new ArrayList<>();
         Circuit circuit;
-        LinkedList<Client> customers;
-        Client customer;
+        LinkedList<Client> listClients;
+        Client client;
         Random r = new Random();
         Integer index;
 
         //Init all circuit with one customer selected randomly
-        for(int i = 0; i < nbTrucks; ++i){
-            customers = new LinkedList<>();
-            index = r.nextInt(allCustomers.size());
-            customer = allCustomers.get(index);
-            allCustomers.remove(customer);
-            customers.add(entrepot);
-            customers.add(customer);
-            circuit = new Circuit(customers);
+        for(int i = 0; i < nbCamions; ++i){
+            listClients = new LinkedList<>();
+            index = r.nextInt(this.listClients.size());
+            client = this.listClients.get(index);
+            this.listClients.remove(client);
+            listClients.add(entrepot);
+            listClients.add(client);
+            circuit = new Circuit(listClients);
             allCircuits.add(circuit);
         }
 
@@ -190,28 +187,28 @@ public class Graph {
         Double distance;
         Integer selectedCircuit = null;
         Circuit circuit1;
-        for(Client c : allCustomers){
+        for(Client c : this.listClients){
             for(int i = 0; i < allCircuits.size(); i++){
                 circuit1 = allCircuits.get(i);
                 distance = c.getDistance(circuit1.computeGravityCenter());
-                if((minDistance == null || minDistance > distance) && circuit1.getQuantity() + c.getQuantite() <= 100) {
+                if((minDistance == null || minDistance > distance) && circuit1.getQuantite() + c.getQuantite() <= 100) {
                     minDistance = distance;
                     selectedCircuit = i;
                 }
             }
             if(selectedCircuit == null){
                 Circuit newCircuit = new Circuit(new LinkedList<>());
-                newCircuit.addCustomer(c);
+                newCircuit.ajouterClient(c);
                 allCircuits.add(newCircuit);
             }
             else
-                allCircuits.get(selectedCircuit).addCustomer(c);
+                allCircuits.get(selectedCircuit).ajouterClient(c);
             minDistance = null;
             selectedCircuit = null;
         }
 
         Double circuitDistance;
-        Double fitnessTotal = 0d;
+        Double fitnessTotal = 0.;
         for(Circuit c : allCircuits) {
             circuitDistance = c.computeFitness();
             c.setFitness(circuitDistance);
@@ -220,34 +217,34 @@ public class Graph {
         System.out.println("Fitness total : " + fitnessTotal);
     }
 
-    public void searchOptimizedNeighbor(){
-        List<Circuit> c1 = allCircuits;
+    public void rechercheMeilleurVoisins(){
+        List<Circuit> listCircuits = allCircuits;
         try {
             for (int i = 0; i < 50; ++i) {
-                c1 = getOptimizedNeighbor(c1, getTotalFitness(c1));
+                listCircuits = getMeilleurVoisin(listCircuits, getTotalFitness(listCircuits));
             }
-            System.out.println("Fitness après tabou : " + getTotalFitness(c1));
+            System.out.println("Fitness après tabou : " + getTotalFitness(listCircuits));
         }catch (Exception e){
-            System.out.println("Fitness après tabou : " + getTotalFitness(c1));
+            System.out.println("Fitness après tabou : " + getTotalFitness(listCircuits));
         }
-        optimizedCircuit = c1;
+        circuitOptimise = listCircuits;
     }
 
     public Double tabou(){
         tabouList = new LinkedList<>();
-        List<Circuit> c1 = allCircuits;
+        List<Circuit> listCircuits = allCircuits;
         try {
             for (int i = 0; i < nbMaxIteration; ++i) {
-                c1 = tabouMethod(c1, getTotalFitness(c1));
+                listCircuits = runTabou(listCircuits, getTotalFitness(listCircuits));
             }
-            System.out.println("Fitness après tabou : " + getTotalFitness(c1));
+            System.out.println("Fitness après tabou : " + getTotalFitness(listCircuits));
         }catch (Exception e){
             e.printStackTrace();
-            System.out.println("Fitness après tabou : " + getTotalFitness(c1));
+            System.out.println("Fitness après tabou : " + getTotalFitness(listCircuits));
         }
-        optimizedCircuit = c1;
+        circuitOptimise = listCircuits;
 
-        return getTotalFitness(c1);
+        return getTotalFitness(listCircuits);
     }
 
     public static void main(String[] args) {
@@ -259,20 +256,20 @@ public class Graph {
         return allCircuits;
     }
 
-    public List<Client> getAllCustomers() {
-        return allCustomers;
+    public List<Client> getListClients() {
+        return listClients;
     }
 
-    public Client getWarehouse() {
+    public Client getEntrepot() {
         return entrepot;
     }
 
-    public List<Circuit> getOptimizedCircuit() {
-        return optimizedCircuit;
+    public List<Circuit> getCircuitOptimise() {
+        return circuitOptimise;
     }
 
-    public void setTabouListSize(Integer tabouListSize) {
-        this.tabouListSize = tabouListSize;
+    public void setTailleListTabou(Integer tailleListTabou) {
+        this.tailleListTabou = tailleListTabou;
     }
 
     public void setNbMaxIteration(Integer nbMaxIteration) {

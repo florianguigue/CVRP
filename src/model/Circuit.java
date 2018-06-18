@@ -3,80 +3,66 @@ package model;
 import java.util.LinkedList;
 
 public class Circuit implements Cloneable{
-    private LinkedList<Client> customers;
-    private Integer quantity;
+    private LinkedList<Client> clients;
+    private Integer quantite;
     private Double fitness;
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Circuit{" + "customers={");
-        for(Client c : customers)
-            sb.append(c);
-        sb.append("}, quantity=")
-                .append(quantity)
-                .append(", fitness=")
-                .append(fitness)
-                .append('}');
-        return sb.toString();
-    }
-
     public Circuit(LinkedList<Client> customers) {
-        this.customers = customers;
-        this.quantity = 0;
+        this.clients = customers;
+        this.quantite = 0;
         for(Client c : customers)
-            this.quantity += c.getQuantite();
+            this.quantite += c.getQuantite();
     }
 
-    public LinkedList<Client> getCustomers() {
-        return customers;
+    public LinkedList<Client> getClients() {
+        return clients;
     }
 
     public void setFitness(Double fitness) {
         this.fitness = fitness;
     }
 
-    public void addCustomerAt(Client c, Integer index){
-        quantity += c.getQuantite();
-        customers.add(index, c);
+    public void ajouterClientAtIndex(Client c, Integer index){
+        quantite += c.getQuantite();
+        clients.add(index, c);
     }
 
-    public void addCustomer(Client c){
-        quantity += c.getQuantite();
-        customers.add(c);
+    public void ajouterClient(Client c){
+        quantite += c.getQuantite();
+        clients.add(c);
     }
 
-    public void removeCustomer(Client c){
-        quantity -= c.getQuantite();
-        customers.remove(c);
+    public void supprimerClient(Client c){
+        quantite -= c.getQuantite();
+        clients.remove(c);
     }
 
-    public Integer getQuantity() {
-        return quantity;
+    public Integer getQuantite() {
+        return quantite;
     }
 
     public Client computeGravityCenter(){
         Integer X = 0;
         Integer Y = 0;
-        for(Client c : customers){
+        for(Client c : clients){
             X += c.getLongitude();
             Y += c.getLatitude();
         }
-        return new Client(0, X/customers.size(), Y/customers.size(), 0);
+        return new Client(0, X/ clients.size(), Y/ clients.size(), 0);
     }
 
     public Double computeFitness(){
         Double fitness = 0d;
-        for(int i = 0; i < customers.size()-1; ++i){
-            fitness += customers.get(i).getDistance(customers.get(i+1));
+        for(int i = 0; i < clients.size()-1; ++i){
+            fitness += clients.get(i).getDistance(clients.get(i+1));
         }
-        fitness += customers.getLast().getDistance(customers.getFirst());
+        fitness += clients.getLast().getDistance(clients.getFirst());
         return fitness;
     }
 
     public Circuit clone() throws CloneNotSupportedException {
         Circuit c = (Circuit)super.clone();
-        c.customers = (LinkedList<Client>)customers.clone();
+        c.clients = (LinkedList<Client>) clients.clone();
         return c;
     }
 
@@ -87,15 +73,15 @@ public class Circuit implements Cloneable{
 
         Circuit circuit = (Circuit) o;
 
-        if (customers != null ? !customers.equals(circuit.customers) : circuit.customers != null) return false;
-        if (quantity != null ? !quantity.equals(circuit.quantity) : circuit.quantity != null) return false;
+        if (clients != null ? !clients.equals(circuit.clients) : circuit.clients != null) return false;
+        if (quantite != null ? !quantite.equals(circuit.quantite) : circuit.quantite != null) return false;
         return fitness != null ? fitness.equals(circuit.fitness) : circuit.fitness == null;
     }
 
     @Override
     public int hashCode() {
-        int result = customers != null ? customers.hashCode() : 0;
-        result = 31 * result + (quantity != null ? quantity.hashCode() : 0);
+        int result = clients != null ? clients.hashCode() : 0;
+        result = 31 * result + (quantite != null ? quantite.hashCode() : 0);
         result = 31 * result + (fitness != null ? fitness.hashCode() : 0);
         return result;
     }
