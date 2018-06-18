@@ -171,7 +171,6 @@ public class Graph {
         Random r = new Random();
         Integer index;
 
-        //Init all circuit with one customer selected randomly
         for(int i = 0; i < nbCamions; ++i){
             listClients = new LinkedList<>();
             index = r.nextInt(this.listClients.size());

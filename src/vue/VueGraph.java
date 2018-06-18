@@ -65,7 +65,6 @@ public class VueGraph extends Application {
         });
         data5.setLayoutX(420);
         root.getChildren().add(data5);
-        //Creating a Scene
 
         Integer tabouListSize = 3;
         Integer tabouIteration = 100;
@@ -125,13 +124,10 @@ public class VueGraph extends Application {
 
         Scene scene = new Scene(root, 900, 600);
 
-        //Setting title to the scene
         primaryStage.setTitle("VRP Problem");
 
-        //Adding the scene to the stage
         primaryStage.setScene(scene);
 
-        //Displaying the contents of a scene
         primaryStage.show();
 
 
